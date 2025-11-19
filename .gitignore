@@ -1,2 +1,5 @@
 # Ignore the .vscode directory
 demo/.vscode
+
+# Ignore the build directory
+demo/build
