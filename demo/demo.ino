@@ -1,11 +1,71 @@
-// This function is used to initialize the various hardware that will be used
-// in the code. It is only called once.
+///
+/// @file
+///
+/// @brief
+/// Arduino WiFi demo main
+///
+/// @details
+/// This is the main Arduino project source for a demonstration of the WiFi 
+/// capabilities. It is intended to be given on 20251204 during a meetup.
+
+//
+// Local Includes
+//
+#include "src/hw_serial/hw_serial.h"
+#include "src/console/console.h"
+
+//
+// Local Definitions
+//
+
+/// @brief
+/// Defines the console baud rate
+#define CONSOLE_BAUD                        115200
+
+//
+// Local Structures / Enumerations / Type Definitions
+//
+struct app_info
+{
+    struct uart_funcs * hw_uart;
+};
+
+//
+// Local Function Prototypes
+//
+
+//
+// Local Global Variables
+//
+struct app_info app = { 0 };
+
+//
+// Code
+//
+
+/// @brief
+/// Arduino setup function
+///
+/// @details
+/// This code is called only once and by the Arduino runtime prior to calling
+/// the loop function. It will initialize the various CPU hardware that will be
+/// used along with any software modules.
 void setup()
 {
+    // Setup the console
+    hw_serial_init_uart((unsigned long)CONSOLE_BAUD);
+    app.hw_uart = console_init(
+        hw_serial_get_read_fn(),
+        hw_serial_get_write_fn());
 }
 
-// This function is where the actual application code resides. It will run thru
-// the code to the bottom and then start back over from the top forever.
+/// @brief
+/// Arduino loop function
+///
+/// @details
+/// This code is called after the setup function and runs indefinitely. It is
+/// where the actual application code resides.
 void loop()
 {
+    console_action(app.hw_uart);
 }
