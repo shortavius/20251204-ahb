@@ -162,17 +162,6 @@ size_t
 console_printf(struct uart_funcs * uart, const char *fmt, ...)
 	__attribute__ ((format (printf, 2, 3)));
 
-/// @brief
-/// Display newline
-///
-/// @details
-/// This function displays a newline on the specified UART.
-///
-/// @param [in] uart
-/// A pointer to the uart_funcs structure
-void
-console_newline(struct uart_funcs * uart);
-
 //
 // Shared Global Variables
 //

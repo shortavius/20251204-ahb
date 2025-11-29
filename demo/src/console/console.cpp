@@ -36,6 +36,8 @@ BEGIN_C_DECLS
 // Local Definitions
 //
 #define CONSOLE_CTRL_KEY_ADD(_key,_byte,_fn) {_byte, CONSOLE_KEY_ ## _key, _fn}
+#define CONSOLE_ESC_KEY_ADD(_key, _esc, _fn)             \
+    {_esc, CONSOLE_KEY_ ## _key, sizeof(_esc) - 1u, _fn}
 
 //
 // Local Structures / Enumerations / Type Definitions
@@ -112,11 +114,44 @@ struct console_info
 enum console_keys
 {
     /// @brief
+    /// Backspace key
+    CONSOLE_KEY_BACKSPACE,
+    /// @brief
+    /// Key combo CTRL + C
+    CONSOLE_KEY_CTRL_C,
+    /// @brief
     /// Delete key
     CONSOLE_KEY_DELETE,
     /// @brief
-    /// Backspace key
-    CONSOLE_KEY_BACKSPACE,
+    /// Down arrow key
+    CONSOLE_KEY_DOWN,
+    /// @brief
+    /// End key
+    CONSOLE_KEY_END,
+    /// @brief
+    /// Home key
+    CONSOLE_KEY_HOME,
+    /// @brief
+    /// Insert key
+    CONSOLE_KEY_INSERT,
+    /// @brief
+    /// Left arrow key
+    CONSOLE_KEY_LEFT,
+    /// @brief
+    /// Keypad enter key
+    CONSOLE_KEY_KP_ENTER,
+    /// @brief
+    /// Right arrow key
+    CONSOLE_KEY_RIGHT,
+    /// @brief
+    /// Page down key
+    CONSOLE_KEY_PGDOWN,
+    /// @brief
+    /// Page up key
+    CONSOLE_KEY_PGUP,
+    /// @brief
+    /// Up arrow key
+    CONSOLE_KEY_UP,
     /// @brief
     /// Maximum number of keys
     CONSOLE_KEY_MAX
@@ -139,6 +174,28 @@ struct ctrl_key
     /// @brief
     /// This is the function to execute when the control key is detected
     void (*handle_fn)(struct uart_funcs *, enum console_keys, uint8_t);
+};
+
+/// @brief
+/// Escape key
+///
+/// @details
+/// This structure defines what an escape key that the console supports is and
+/// does.
+struct esc_key
+{
+    /// @brief
+    /// This is the escape key sequence of bytes
+    const char * bytes;
+    /// @brief
+    /// This is the escape key
+    enum console_keys key;
+    /// @brief
+    /// This is the length of the escape key sequence bytes
+    unsigned len;
+    /// @brief
+    /// This is the function to execute when the control key is detected
+    void (*handle_fn)(struct uart_funcs *, enum console_keys, const char *);
 };
 
 //
@@ -231,7 +288,7 @@ console_input_insert(struct console_input * in, uint8_t byte);
 /// @param [in] byte
 /// (NOT USED) The byte received from the console of type uint8_t
 static void
-console_handle_key_backspace(
+console_key_backspace(
     struct uart_funcs * uart,
     enum console_keys key,
     uint8_t byte);
@@ -252,10 +309,9 @@ console_handle_key_backspace(
 /// @param [in] byte
 /// (NOT USED) The byte received from the console of type uint8_t
 static void
-console_handle_key_delete(
+console_key_delete(
     struct uart_funcs * uart,
-    enum console_keys key,
-    uint8_t byte);
+    enum console_keys key);
 
 /// @brief
 /// Determine if a byte is a control byte
@@ -325,6 +381,106 @@ console_is_handled_ctrl_byte(uint8_t byte);
 static void
 console_input_clear(struct console_input * in);
 
+/// @brief
+/// Process an escape sequence byte
+///
+/// @details
+/// This function gathers up the various escape sequence bytes and searches for
+/// a supported match.
+///
+/// @param uart
+/// A pointer to a specific struct uart_funcs
+///
+/// @param byte
+/// The escape byte to be processed
+static void
+console_process_esc_byte(struct uart_funcs * uart, uint8_t byte);
+
+/// @brief
+/// Escape sequence key to be ignored
+///
+/// @details
+/// This function doesn't do anything. It is to be paired with escape sequences
+/// that currently aren't supported.
+///
+/// @param [in] uart
+/// A pointer to a specific struct uart_funcs
+///
+/// @param [in] key
+/// The escape key that was pressed which is a console_keys enumeration
+///
+/// @param [in] esc
+/// A pointer to the escape sequence bytes
+static void
+console_esc_key_ignore(
+    struct uart_funcs *uart,
+    enum console_keys key,
+    const char *esc);
+
+/// @brief
+/// Perform actions for various key presses
+///
+/// @details
+/// This function handles a number of key presses that the console handles
+///
+/// @param [in] uart
+/// A pointer to a specific struct uart_funcs
+///
+/// @param [in] key
+/// The key that was pressed which is a console_keys enumeration
+///
+/// @param [in] byte
+/// The byte representation of the key pressed
+static void
+console_key_various(
+    struct uart_funcs * uart,
+    enum console_keys key,
+    uint8_t byte);
+
+/// @brief
+/// Perform actions for various escape sequences
+///
+/// @details
+/// This function handles a number of escape sequence bytes that the console is
+/// aware of.
+///
+/// @param [in] uart
+/// A pointer to a specific struct uart_funcs
+///
+/// @param [in] key
+/// The escape key that was pressed which is a console_keys enumeration
+///
+/// @param [in] esc
+/// A pointer to the escape sequence bytes
+static void
+console_esc_key_various(
+    struct uart_funcs * uart,
+    enum console_keys key,
+    const char *esc);
+
+/// @brief
+/// Display newline
+///
+/// @details
+/// This function displays a newline on the specified UART.
+///
+/// @param [in] uart
+/// A pointer to the uart_funcs structure
+static void
+console_newline(struct uart_funcs * uart);
+
+/// @brief
+/// Delete remaining line
+///
+/// @details
+/// This function deletes the remaining part of the current command line from
+/// the cursor's present postion.
+///
+/// @param uart
+/// A pointer to the uart_funcs structure
+static void
+console_cutline_here(struct uart_funcs * uart);
+
 //
 // Local Global Variables
 //
@@ -332,8 +488,23 @@ static struct console_info con_info;
 static struct console_input con_input;
 static const struct ctrl_key __ctrl_keys[] =
 {
-    CONSOLE_CTRL_KEY_ADD(BACKSPACE, '\b',   console_handle_key_backspace),
-    CONSOLE_CTRL_KEY_ADD(DELETE,    '\177', console_handle_key_delete)
+    CONSOLE_CTRL_KEY_ADD(BACKSPACE, '\b',   console_key_backspace),
+    CONSOLE_CTRL_KEY_ADD(BACKSPACE, '\177', console_key_backspace),
+    CONSOLE_CTRL_KEY_ADD(CTRL_C,    '\003', console_key_various),
+};
+static const struct esc_key __esc_keys[] =
+{
+    CONSOLE_ESC_KEY_ADD(DELETE,   "\033[3~", console_esc_key_various),
+    CONSOLE_ESC_KEY_ADD(DOWN,     "\033[B",  console_esc_key_ignore),
+    CONSOLE_ESC_KEY_ADD(END,      "\033[F",  console_esc_key_various),
+    CONSOLE_ESC_KEY_ADD(HOME,     "\033[H",  console_esc_key_various),
+    CONSOLE_ESC_KEY_ADD(INSERT,   "\033[2~", console_esc_key_ignore),
+    CONSOLE_ESC_KEY_ADD(KP_ENTER, "\033OM",  console_esc_key_various),
+    CONSOLE_ESC_KEY_ADD(LEFT,     "\033[D",  console_esc_key_various),
+    CONSOLE_ESC_KEY_ADD(RIGHT,    "\033[C",  console_esc_key_various),
+    CONSOLE_ESC_KEY_ADD(PGDOWN,   "\033[6~", console_esc_key_ignore),
+    CONSOLE_ESC_KEY_ADD(PGUP,     "\033[5~", console_esc_key_ignore),
+    CONSOLE_ESC_KEY_ADD(UP,       "\033[A",  console_esc_key_ignore)
 };
 
 //
@@ -451,13 +622,6 @@ console_printf(struct uart_funcs * uart, const char *fmt, ...)
     return ret;
 }
 
-void
-console_newline(struct uart_funcs * uart)
-{
-    static const char newline[] = "\r\n";
-    uart->write_fn(newline, sizeof(newline) - 1u);
-}
-
 static inline struct console_info *
 console_info_from_uart_funcs(struct uart_funcs * uart)
 {
@@ -498,7 +662,11 @@ console_process_byte(struct uart_funcs * uart, uint8_t byte)
 {
     struct console_input * in = console_info_from_uart_funcs(uart)->in;
 
-    if (console_is_ctrl_byte(byte))
+    if (in->esc_pos)
+    {
+        console_process_esc_byte(uart, byte);
+    }
+    else if (console_is_ctrl_byte(byte))
     {
         console_process_ctrl_byte(uart, byte);
     }
@@ -534,7 +702,7 @@ console_input_insert(struct console_input * in, uint8_t byte)
 }
 
 static void
-console_handle_key_backspace(
+console_key_backspace(
     struct uart_funcs * uart,
     enum console_keys key,
     uint8_t byte)
@@ -564,36 +732,33 @@ console_handle_key_backspace(
 }
 
 static void
-console_handle_key_delete(
+console_key_delete(
     struct uart_funcs * uart,
-    enum console_keys key,
-    uint8_t byte)
+    enum console_keys key)
 {
-    static const char ctl[] = "\033[K";
     struct console_input * in = console_info_from_uart_funcs(uart)->in;
     uint8_t * buff = in->buff;
+    size_t nshift;
 
     // Remove variables that aren't needed
     (void)key;
-    (void)byte;
 
     // Are we at the end of the command line?
     if (in->ipos == in->len) { return; }
 
     // Are there characters to be deleted?
-    if (!in->len) { return; }
+    if (!in->len || (in->ipos >= in->len)) { return; }
 
     // Are we in the middle of the command line?
-    if (in->ipos < in->len)
+    if ((nshift = in->len - (in->ipos + 1u)))
     {
-        size_t nshift = in->len - in->ipos;
-        memmove(&buff[in->ipos + 1u], &buff[in->ipos], nshift);
+        memmove(&buff[in->ipos], &buff[in->ipos + 1u], nshift);
     }
 
     in->len--;
-    in->ipos--;
+    in->ipos = MIN(in->ipos, in->len);
     buff[in->len] = '\0';
-    uart->write_fn(ctl, sizeof(ctl) - 1u);
+    console_cutline_here(uart);
 }
 
 static int
@@ -673,6 +838,121 @@ console_input_clear(struct console_input * in)
     in->esc_pos = 0u;
     in->esc_buff[0] = '\0';
     in->buff[0] = '\0';
+}
+
+static void
+console_process_esc_byte(struct uart_funcs * uart, uint8_t byte)
+{
+    struct console_input * in = console_info_from_uart_funcs(uart)->in;
+    const char *ebuff = (char *)in->esc_buff;
+    unsigned idx;
+
+    // Is this an unmatched sequence?
+    if (((in->esc_pos + 1u) >= COUNT_OF(in->esc_buff)) ||
+        (((uint8_t)0x20u > byte) ||
+         ((uint8_t)0x7fu < byte)))
+    {
+        size_t n;
+        n = COUNT_OF(in->esc_buff) - 1u;
+        n = MIN(in->esc_pos, n);
+        in->esc_buff[n] = '\0';
+        in->esc_pos = 0u;
+        return;
+    }
+
+    in->esc_buff[in->esc_pos++] = byte;
+    in->esc_buff[in->esc_pos] = '\0';
+    for (idx = 0u; idx < COUNT_OF(__esc_keys); idx++)
+    {
+        if ((in->esc_pos != __esc_keys[idx].len) ||
+            (strncmp(ebuff, __esc_keys[idx].bytes, in->esc_pos)))
+        {
+            continue;
+        }
+
+        __esc_keys[idx].handle_fn(uart, __esc_keys[idx].key, ebuff);
+        in->esc_pos = 0u;
+    }
+}
+
+static void
+console_esc_key_ignore(
+    struct uart_funcs * uart,
+    enum console_keys key,
+    const char *esc)
+{
+    (void)uart;
+    (void)key;
+    (void)esc;
+}
+
+static void
+console_key_various(
+    struct uart_funcs * uart,
+    enum console_keys key,
+    uint8_t byte)
+{
+    struct console_info * info = console_info_from_uart_funcs(uart);
+    struct console_input * in = info->in;
+
+    switch (key)
+    {
+        case CONSOLE_KEY_CTRL_C:
+            info->action_state = CONSOLE_STATE_NEWLINE_THEN_ACQUIRE;
+            break;
+        default:
+            console_printf(uart, "\r\nWARN: Keypress missed 0x%02x\r\n", byte);
+            break;
+    }
+}
+
+static void
+console_esc_key_various(
+    struct uart_funcs * uart,
+    enum console_keys key,
+    const char *esc)
+{
+    struct console_info * info = console_info_from_uart_funcs(uart);
+    struct console_input * in = info->in;
+
+    switch(key)
+    {
+        case CONSOLE_KEY_DELETE:
+            console_key_delete(uart, key);
+            break;
+        case CONSOLE_KEY_END:
+            in->ipos = in->len;
+            break;
+        case CONSOLE_KEY_HOME:
+            in->ipos = 0u;
+            break;
+        case CONSOLE_KEY_KP_ENTER:
+            // TODO: Pass the command line over to the command parsing engine
+            // TODO: Update history
+            // TODO: Change state to CONSOLE_STATE_PROCESS_COMMAND_LINE
+            info->action_state = CONSOLE_STATE_NEWLINE_THEN_ACQUIRE;
+            break;
+        case CONSOLE_KEY_LEFT:
+            if (in->ipos) { in->ipos--; }
+            break;
+        case CONSOLE_KEY_RIGHT:
+            if (in->ipos < in->len) { in->ipos++; }
+            break;
+    }
+}
+
+static void
+console_newline(struct uart_funcs * uart)
+{
+    static const char newline[] = "\r\n";
+    uart->write_fn(newline, sizeof(newline) - 1u);
+}
+
+static void
+console_cutline_here(struct uart_funcs * uart)
+{
+	static const char ctl[] = "\033[K";
+    uart->write_fn(ctl, sizeof(ctl) - 1u);
 }
 
 END_C_DECLS
