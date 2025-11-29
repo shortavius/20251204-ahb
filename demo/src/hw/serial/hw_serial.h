@@ -6,7 +6,7 @@
 ///
 /// @details
 /// This is a helper module which deals with the Arduino Nano's UART, which is
-/// named Serial. 
+/// named Serial.
 
 #if !defined(_HW_SERIAL)
 #define _HW_SERIAL
@@ -57,15 +57,15 @@ hw_serial_init_uart(unsigned long baud);
 ///
 /// @details
 /// Get a pointer to the function that reads data from the UART.
-size_t 
+size_t
 (*hw_serial_get_read_fn(void)) (void * buff, size_t len);
 
 /// @brief
 /// Get UART write function
 ///
 /// @details
-/// Get a pointer to the function that writes data to the UART. 
-size_t 
+/// Get a pointer to the function that writes data to the UART.
+size_t
 (*hw_serial_get_write_fn(void)) (const void * buff, size_t len);
 
 //
