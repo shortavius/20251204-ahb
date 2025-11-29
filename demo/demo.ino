@@ -5,13 +5,14 @@
 /// Arduino WiFi demo main
 ///
 /// @details
-/// This is the main Arduino project source for a demonstration of the WiFi 
+/// This is the main Arduino project source for a demonstration of the WiFi
 /// capabilities. It is intended to be given on 20251204 during a meetup.
 
 //
 // Local Includes
 //
-#include "src/hw_serial/hw_serial.h"
+#include "src/hrtbt/hrtbt.h"
+#include "src/hw/serial/hw_serial.h"
 #include "src/console/console.h"
 
 //
@@ -52,6 +53,9 @@ struct app_info app = { 0 };
 /// used along with any software modules.
 void setup()
 {
+    // Setup the heart beat
+    hrtbt_cfg();
+
     // Setup the console
     hw_serial_init_uart((unsigned long)CONSOLE_BAUD);
     app.hw_uart = console_init(
@@ -67,5 +71,9 @@ void setup()
 /// where the actual application code resides.
 void loop()
 {
+    // Perform console actions
     console_action(app.hw_uart);
+
+    // Perform heart beat actions
+    hrtbt_action();
 }
