@@ -13,7 +13,7 @@
 //
 #include "src/hrtbt/hrtbt.h"
 #include "src/hw/serial/hw_serial.h"
-#include "src/console/console.h"
+#include "src/cpe/cpe.h"
 
 //
 // Local Definitions
@@ -61,6 +61,9 @@ void setup()
     app.hw_uart = console_init(
         hw_serial_get_read_fn(),
         hw_serial_get_write_fn());
+
+    // Setup the cpe
+    cpe_cfg(app.hw_uart);
 }
 
 /// @brief
@@ -71,6 +74,9 @@ void setup()
 /// where the actual application code resides.
 void loop()
 {
+    // Perform cpe actions
+    cpe_action();
+
     // Perform console actions
     console_action(app.hw_uart);
 

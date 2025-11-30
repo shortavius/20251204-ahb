@@ -15,6 +15,7 @@
 //
 #include "console.h"
 #include "../misc/macros.h"
+#include "../cpe/cpe.h"
 
 #include <string.h>
 #include <stdint.h>
@@ -57,6 +58,9 @@ enum console_action_states
     /// @brief
     /// Acquire command line to process
     CONSOLE_STATE_ACQUIRE_COMMAND_LINE,
+    /// @brief
+    /// Prepare to start processing a command line
+    CONSOLE_STATE_PREPARE_PROCESS_COMMAND_LINE,
     /// @brief
     /// Process command line
     CONSOLE_STATE_PROCESS_COMMAND_LINE,
@@ -525,6 +529,12 @@ console_action(struct uart_funcs * uart)
     {
         console_recv_data(uart);
     }
+    else if (CONSOLE_STATE_PREPARE_PROCESS_COMMAND_LINE == info->action_state)
+    {
+        console_newline(uart);
+        console_newline(uart);
+        info->action_state = CONSOLE_STATE_PROCESS_COMMAND_LINE;
+    }
     else if (CONSOLE_STATE_PROCESS_COMMAND_LINE == info->action_state)
     {
         // While processing a command line, there is nothing to do
@@ -622,10 +632,17 @@ console_printf(struct uart_funcs * uart, const char *fmt, ...)
     return ret;
 }
 
+void
+console_process_command_done(struct uart_funcs * uart)
+{
+    struct console_info * info = console_info_from_uart_funcs(uart);
+
+    info->action_state = CONSOLE_STATE_NEWLINE_THEN_ACQUIRE;
+}
+
 static inline struct console_info *
 console_info_from_uart_funcs(struct uart_funcs * uart)
 {
-    typeof(uart) name = NULL;
     return container_of(uart, struct console_info, uart);
 }
 
@@ -782,10 +799,9 @@ console_process_ctrl_byte(struct uart_funcs * uart, uint8_t byte)
     // Has the enter or return key been pressed?
     if ('\r' == byte)
     {
-        // TODO: Pass the command line over to the command parsing engine
         // TODO: Update history
-        // TODO: Change state to CONSOLE_STATE_PROCESS_COMMAND_LINE
-        info->action_state = CONSOLE_STATE_NEWLINE_THEN_ACQUIRE;
+        cpe_set_processing_buffer(in->buff);
+        info->action_state = CONSOLE_STATE_PREPARE_PROCESS_COMMAND_LINE;
     }
     // Has an escape sequence started?
     else if ('\033' == byte)
@@ -927,10 +943,9 @@ console_esc_key_various(
             in->ipos = 0u;
             break;
         case CONSOLE_KEY_KP_ENTER:
-            // TODO: Pass the command line over to the command parsing engine
             // TODO: Update history
-            // TODO: Change state to CONSOLE_STATE_PROCESS_COMMAND_LINE
-            info->action_state = CONSOLE_STATE_NEWLINE_THEN_ACQUIRE;
+            cpe_set_processing_buffer(in->buff);
+            info->action_state = CONSOLE_STATE_PREPARE_PROCESS_COMMAND_LINE;
             break;
         case CONSOLE_KEY_LEFT:
             if (in->ipos) { in->ipos--; }

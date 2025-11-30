@@ -162,6 +162,18 @@ size_t
 console_printf(struct uart_funcs * uart, const char *fmt, ...)
 	__attribute__ ((format (printf, 2, 3)));
 
+/// @brief
+/// Signal command processing is over
+///
+/// @details
+/// This function tells the console that the processing of the supplied command
+/// is finished and to start building up the next command line.
+///
+/// @param [in] uart
+/// A pointer to the uart functions
+void
+console_process_command_done(struct uart_funcs * uart);
+
 //
 // Shared Global Variables
 //
