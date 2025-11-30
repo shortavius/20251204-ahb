@@ -13,6 +13,7 @@
 #include "cmd_help.h"
 #include "../../cpe/cpe.h"
 #include "../hrtbt/cmd_hrtbt.h"
+#include "../ntwrk/cmd_ntwrk.h"
 
 #undef BEGIN_C_DECLS
 #undef END_C_DECLS
@@ -103,6 +104,7 @@ static void cmd_help(void * x)
     console_printf(uart,
         "  ? or help - Display this message\r\n");
     cmd_hrtbt_root_help();
+    cmd_ntwrk_root_help();
 }
 
 END_C_DECLS

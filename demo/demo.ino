@@ -14,6 +14,7 @@
 #include "src/hrtbt/hrtbt.h"
 #include "src/hw/serial/hw_serial.h"
 #include "src/cpe/cpe.h"
+#include "src/ntwrk/ntwrk.h"
 
 //
 // Local Definitions
@@ -64,6 +65,9 @@ void setup()
 
     // Setup the cpe
     cpe_cfg(app.hw_uart);
+
+    // Setup the network
+    ntwrk_cfg();
 }
 
 /// @brief
@@ -82,4 +86,7 @@ void loop()
 
     // Perform heart beat actions
     hrtbt_action();
+
+    // Perform network actions
+    ntwrk_action();
 }

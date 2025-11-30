@@ -13,6 +13,7 @@
 #include "cpe.h"
 #include "../cmd/hrtbt/cmd_hrtbt.h"
 #include "../cmd/help/cmd_help.h"
+#include "../cmd/ntwrk/cmd_ntwrk.h"
 
 #undef BEGIN_C_DECLS
 #undef END_C_DECLS
@@ -72,6 +73,7 @@ void cpe_checking_syntax(void)
 
     if (!valid_syntax) { valid_syntax = cmd_help_syntax(); }
     if (!valid_syntax) { valid_syntax = cmd_hrtbt_syntax(); }
+    if (!valid_syntax) { valid_syntax = cmd_ntwrk_syntax(); }
 
     // Check various syntax
     if ((uint8_t)0x0 == valid_syntax)
