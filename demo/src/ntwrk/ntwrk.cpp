@@ -11,6 +11,9 @@
 // Local Includes
 //
 #include "ntwrk.h"
+#include "../misc/macros.h"
+
+#include <string.h>
 
 #include <WiFiNINA.h>
 
@@ -33,6 +36,11 @@ BEGIN_C_DECLS
 //
 // Local Structures / Enumerations / Type Definitions
 //
+struct ntwrk_info
+{
+    struct ssid_info ssid;
+    uint8_t status;
+};
 
 //
 // Local Function Prototypes
@@ -42,6 +50,11 @@ BEGIN_C_DECLS
 // Local Global Variables
 //
 struct ntwrk_info nw_info = {
+    .ssid =
+    {
+        .name = { 0u },
+        .pass = { 0u }
+    },
     .status = WL_NO_MODULE
 };
 
@@ -49,15 +62,19 @@ struct ntwrk_info nw_info = {
 // Code
 //
 void
-ntwrk_action(void)
+ntwrk_action(struct ssid_info * ssid)
 {
     nw_info.status = WiFi.status();
 }
 
-void
+struct ssid_info *
 ntwrk_cfg(void)
 {
     nw_info.status = WiFi.status();
+    (void)memset(nw_info.ssid.name, '\0', COUNT_OF(nw_info.ssid.name));
+    (void)memset(nw_info.ssid.pass, '\0', COUNT_OF(nw_info.ssid.pass));
+
+    return &nw_info.ssid;
 }
 
 uint8_t
@@ -66,6 +83,16 @@ ntwrk_get_wifi_status(void)
     return nw_info.status;
 }
 
+char *
+ntwrk_get_ssid_name(void)
+{
+    return (char *)nw_info.ssid.name;
+}
 
+char *
+ntwrk_get_ssid_pass(void)
+{
+    return (char *)nw_info.ssid.pass;
+}
 
 END_C_DECLS

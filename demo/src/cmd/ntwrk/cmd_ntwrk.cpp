@@ -31,7 +31,7 @@ BEGIN_C_DECLS
 //
 // Local Definitions
 //
-#define NTWRK_NUM_COMMANDS                  3
+#define NTWRK_NUM_COMMANDS                  8
 
 //
 // Local Structures / Enumerations / Type Definitions
@@ -40,8 +40,13 @@ BEGIN_C_DECLS
 //
 // Local Function Prototypes
 //
+static void cmd_ntwrk_get_ssid(void * x);
+static void cmd_ntwrk_get_ssid_name(void * x);
+static void cmd_ntwrk_get_ssid_pass(void * x);
 static void cmd_ntwrk_help(void * x);
 static void cmd_ntwrk_scan(void * x);
+static void cmd_ntwrk_set_ssid_name_str(void * x);
+static void cmd_ntwrk_set_ssid_pass_str(void * x);
 static void cmd_ntwrk_status(void * x);
 
 //
@@ -83,6 +88,110 @@ const static struct cpe_syntax_tkn syntax_ntwrk_status_tkns[2] =
     }
 };
 
+const static struct cpe_syntax_tkn syntax_ntwrk_get_ssid_tkns[3] =
+{
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_NTWRK
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_GET
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_SSID
+    },
+};
+
+const static struct cpe_syntax_tkn syntax_ntwrk_get_ssid_name_tkns[4] =
+{
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_NTWRK
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_GET
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_SSID
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_NAME
+    },
+};
+
+const static struct cpe_syntax_tkn syntax_ntwrk_get_ssid_pass_tkns[4] =
+{
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_NTWRK
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_GET
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_SSID
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_PASS
+    },
+};
+
+const static struct cpe_syntax_tkn syntax_ntwrk_get_ssid_name_str_tkns[5] =
+{
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_NTWRK
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_SET
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_SSID
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_NAME
+    },
+    {
+        .cat = CPE_TOKEN_CAT_STRING,
+        .kyw = CPE_KEYWORD_UNDEFINED
+    }
+};
+
+const static struct cpe_syntax_tkn syntax_ntwrk_get_ssid_pass_str_tkns[5] =
+{
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_NTWRK
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_SET
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_SSID
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_PASS
+    },
+    {
+        .cat = CPE_TOKEN_CAT_STRING,
+        .kyw = CPE_KEYWORD_UNDEFINED
+    }
+};
+
 const struct cpe_cmd_syntax syntax_cmd_ntwrk[NTWRK_NUM_COMMANDS] =
 {
     {
@@ -99,6 +208,31 @@ const struct cpe_cmd_syntax syntax_cmd_ntwrk[NTWRK_NUM_COMMANDS] =
         .count = 2,
         .syntax_tkns = &syntax_ntwrk_status_tkns[0],
         .action = cmd_ntwrk_status
+    },
+    {
+        .count = 3,
+        .syntax_tkns = &syntax_ntwrk_get_ssid_tkns[0],
+        .action = cmd_ntwrk_get_ssid
+    },
+    {
+        .count = 4,
+        .syntax_tkns = &syntax_ntwrk_get_ssid_name_tkns[0],
+        .action = cmd_ntwrk_get_ssid_name
+    },
+    {
+        .count = 4,
+        .syntax_tkns = &syntax_ntwrk_get_ssid_pass_tkns[0],
+        .action = cmd_ntwrk_get_ssid_pass
+    },
+    {
+        .count = 5,
+        .syntax_tkns = &syntax_ntwrk_get_ssid_name_str_tkns[0],
+        .action = cmd_ntwrk_set_ssid_name_str
+    },
+    {
+        .count = 5,
+        .syntax_tkns = &syntax_ntwrk_get_ssid_pass_str_tkns[0],
+        .action = cmd_ntwrk_set_ssid_pass_str
     }
 };
 
@@ -164,6 +298,31 @@ uint8_t cmd_ntwrk_syntax(void)
     return rv;
 }
 
+static void cmd_ntwrk_get_ssid(void * x)
+{
+    struct uart_funcs * uart = cpe_get_info()->uart;
+    (void)x;
+
+    console_printf(uart, "    SSID Name: %s\r\n", ntwrk_get_ssid_name());
+    console_printf(uart, "SSID Password: %s\r\n", ntwrk_get_ssid_pass());
+}
+
+static void cmd_ntwrk_get_ssid_pass(void * x)
+{
+    struct uart_funcs * uart = cpe_get_info()->uart;
+    (void)x;
+
+    console_printf(uart, "SSID Password: %s\r\n", ntwrk_get_ssid_pass());
+}
+
+static void cmd_ntwrk_get_ssid_name(void * x)
+{
+    struct uart_funcs * uart = cpe_get_info()->uart;
+    (void)x;
+
+    console_printf(uart, "SSID Name: %s\r\n", ntwrk_get_ssid_name());
+}
+
 static void cmd_ntwrk_help(void * x)
 {
     struct uart_funcs * uart = cpe_get_info()->uart;
@@ -213,6 +372,48 @@ static void cmd_ntwrk_scan(void * x)
         }
         console_printf(uart, "\r\n");
     }
+}
+
+static void cmd_ntwrk_set_ssid_name_str(void * x)
+{
+    struct cpe_info * info = cpe_get_info();
+    struct uart_funcs * uart = cpe_get_info()->uart;
+    (void)x;
+
+    if ((uint8_t)SSID_NAME_MAX_NUM_CHARACTERS < info->token[4].len)
+    {
+        console_printf(uart,
+            "Supplied SSID Name is more than the %d character alloted.\r\n",
+            (uint8_t)SSID_NAME_MAX_NUM_CHARACTERS);
+
+        return;
+    }
+
+    (void)memcpy(
+        ntwrk_get_ssid_name(), info->token[4].start, info->token[4].len);
+    console_printf(uart,
+        "Network SSID Name has been updated.\r\n");
+}
+
+static void cmd_ntwrk_set_ssid_pass_str(void * x)
+{
+    struct cpe_info * info = cpe_get_info();
+    struct uart_funcs * uart = cpe_get_info()->uart;
+    (void)x;
+
+    if ((uint8_t)SSID_PASS_MAX_NUM_CHARACTERS < info->token[4].len)
+    {
+        console_printf(uart,
+            "Supplied SSID password is more than the %d character alloted.\r\n",
+            (uint8_t)SSID_PASS_MAX_NUM_CHARACTERS);
+
+        return;
+    }
+
+    (void)memcpy(
+        ntwrk_get_ssid_pass(), info->token[4].start, info->token[4].len);
+    console_printf(uart,
+        "Network SSID Password has been updated.\r\n");
 }
 
 static void cmd_ntwrk_status(void * x)

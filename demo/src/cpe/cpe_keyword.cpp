@@ -41,24 +41,30 @@ BEGIN_C_DECLS
 //
 static const char * cpe_keyword_list[CPE_NUM_KEYWORDS] = {
     "?",
+    "get",
     "help",
     "hrtbt",
-    "get",
+    "name",
     "ntwrk",
+    "pass",
     "scan",
     "set",
+    "ssid",
     "status",
     "delay"
 };
 
 static const cpe_token_keyword_t cpe_keyword_list_code[CPE_NUM_KEYWORDS] = {
     (cpe_token_keyword_t)CPE_KEYWORD_HELP,
+    (cpe_token_keyword_t)CPE_KEYWORD_GET,
     (cpe_token_keyword_t)CPE_KEYWORD_HELP,
     (cpe_token_keyword_t)CPE_KEYWORD_HRTBT,
-    (cpe_token_keyword_t)CPE_KEYWORD_GET,
+    (cpe_token_keyword_t)CPE_KEYWORD_NAME,
     (cpe_token_keyword_t)CPE_KEYWORD_NTWRK,
+    (cpe_token_keyword_t)CPE_KEYWORD_PASS,
     (cpe_token_keyword_t)CPE_KEYWORD_SCAN,
     (cpe_token_keyword_t)CPE_KEYWORD_SET,
+    (cpe_token_keyword_t)CPE_KEYWORD_SSID,
     (cpe_token_keyword_t)CPE_KEYWORD_STATUS,
     (cpe_token_keyword_t)CPE_KEYWORD_DELAY
 };

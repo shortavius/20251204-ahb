@@ -30,6 +30,7 @@
 struct app_info
 {
     struct uart_funcs * hw_uart;
+    struct ssid_info * ssid;
 };
 
 //
@@ -67,7 +68,7 @@ void setup()
     cpe_cfg(app.hw_uart);
 
     // Setup the network
-    ntwrk_cfg();
+    app.ssid = ntwrk_cfg();
 }
 
 /// @brief
@@ -88,5 +89,5 @@ void loop()
     hrtbt_action();
 
     // Perform network actions
-    ntwrk_action();
+    ntwrk_action(app.ssid);
 }
