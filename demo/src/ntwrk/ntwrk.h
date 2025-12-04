@@ -36,7 +36,6 @@ BEGIN_C_DECLS
 //
 // Shared Structures / Enumerations / Type Definitions
 //
-
 struct ssid_info
 {
     uint8_t name[SSID_NAME_MAX_NUM_CHARACTERS + 1u];

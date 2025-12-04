@@ -37,7 +37,7 @@ BEGIN_C_DECLS
 
 #define CPE_MAX_LINE_SZ                     128u
 #define CPE_MAX_TOKENS_PER_LINE             14
-#define CPE_NUM_KEYWORDS                    12u
+#define CPE_NUM_KEYWORDS                    15u
 
 //
 // Shared Structures / Enumerations / Type Definitions
@@ -65,13 +65,16 @@ typedef enum
 typedef enum
 {
     CPE_KEYWORD_UNDEFINED,
+    CPE_KEYWORD_CONNECT,
     CPE_KEYWORD_DELAY,
     CPE_KEYWORD_GET,
     CPE_KEYWORD_HELP,
     CPE_KEYWORD_HRTBT,
+    CPE_KEYWORD_IP,
     CPE_KEYWORD_NAME,
     CPE_KEYWORD_NTWRK,
     CPE_KEYWORD_PASS,
+    CPE_KEYWORD_PING,
     CPE_KEYWORD_SCAN,
     CPE_KEYWORD_SET,
     CPE_KEYWORD_SSID,

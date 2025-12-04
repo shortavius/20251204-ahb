@@ -31,7 +31,7 @@ BEGIN_C_DECLS
 //
 // Local Definitions
 //
-#define NTWRK_NUM_COMMANDS                  8
+#define NTWRK_NUM_COMMANDS                  11
 
 //
 // Local Structures / Enumerations / Type Definitions
@@ -40,10 +40,13 @@ BEGIN_C_DECLS
 //
 // Local Function Prototypes
 //
+static void cmd_ntwrk_connect(void * x);
+static void cmd_ntwrk_get_ip(void * x);
 static void cmd_ntwrk_get_ssid(void * x);
 static void cmd_ntwrk_get_ssid_name(void * x);
 static void cmd_ntwrk_get_ssid_pass(void * x);
 static void cmd_ntwrk_help(void * x);
+static void cmd_ntwrk_ping_decimal(void * x);
 static void cmd_ntwrk_scan(void * x);
 static void cmd_ntwrk_set_ssid_name_str(void * x);
 static void cmd_ntwrk_set_ssid_pass_str(void * x);
@@ -52,6 +55,18 @@ static void cmd_ntwrk_status(void * x);
 //
 // Local Global Variables
 //
+const static struct cpe_syntax_tkn syntax_ntwrk_connect_tkns[2] =
+{
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_NTWRK
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_CONNECT
+    }
+};
+
 const static struct cpe_syntax_tkn syntax_ntwrk_help_tkns[2] =
 {
     {
@@ -85,6 +100,38 @@ const static struct cpe_syntax_tkn syntax_ntwrk_status_tkns[2] =
     {
         .cat = CPE_TOKEN_CAT_KEYWORD,
         .kyw = CPE_KEYWORD_STATUS
+    }
+};
+
+const static struct cpe_syntax_tkn syntax_ntwrk_get_ip_tkns[3] =
+{
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_NTWRK
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_GET
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_IP
+    }
+};
+
+const static struct cpe_syntax_tkn syntax_ntwrk_ping_decimal_tkns[3] =
+{
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_NTWRK
+    },
+    {
+        .cat = CPE_TOKEN_CAT_KEYWORD,
+        .kyw = CPE_KEYWORD_PING
+    },
+    {
+        .cat = CPE_TOKEN_CAT_DECIMAL,
+        .kyw = CPE_KEYWORD_UNDEFINED
     }
 };
 
@@ -196,6 +243,11 @@ const struct cpe_cmd_syntax syntax_cmd_ntwrk[NTWRK_NUM_COMMANDS] =
 {
     {
         .count = 2,
+        .syntax_tkns = &syntax_ntwrk_connect_tkns[0],
+        .action = cmd_ntwrk_connect
+    },
+    {
+        .count = 2,
         .syntax_tkns = &syntax_ntwrk_help_tkns[0],
         .action = cmd_ntwrk_help
     },
@@ -213,6 +265,16 @@ const struct cpe_cmd_syntax syntax_cmd_ntwrk[NTWRK_NUM_COMMANDS] =
         .count = 3,
         .syntax_tkns = &syntax_ntwrk_get_ssid_tkns[0],
         .action = cmd_ntwrk_get_ssid
+    },
+    {
+        .count = 3,
+        .syntax_tkns = &syntax_ntwrk_get_ip_tkns[0],
+        .action = cmd_ntwrk_get_ip
+    },
+    {
+        .count = 3,
+        .syntax_tkns = &syntax_ntwrk_ping_decimal_tkns[0],
+        .action = cmd_ntwrk_ping_decimal
     },
     {
         .count = 4,
@@ -298,6 +360,37 @@ uint8_t cmd_ntwrk_syntax(void)
     return rv;
 }
 
+static void cmd_ntwrk_connect(void * x)
+{
+    struct uart_funcs * uart = cpe_get_info()->uart;
+    (void)x;
+
+    if ((size_t)0 >= strlen(ntwrk_get_ssid_name()))
+    {
+        console_printf(uart, "ERROR: Network SSID name not set\r\n");
+    }
+    else if ((size_t)0 >= strlen(ntwrk_get_ssid_pass()))
+    {
+        console_printf(uart, "ERROR: Network password not set\r\n");
+    }
+    else
+    {
+        console_printf(uart, "Connecting to %s\r\n", ntwrk_get_ssid_name());
+        WiFi.begin(ntwrk_get_ssid_name(), ntwrk_get_ssid_pass());
+    }
+}
+
+static void cmd_ntwrk_get_ip(void * x)
+{
+    struct uart_funcs * uart = cpe_get_info()->uart;
+    (void)x;
+
+    IPAddress ip_addr = WiFi.localIP();
+    uint8_t temp[30] = { '\0' };
+    ip_addr.toString().toCharArray((char *)&temp[0], 29u, 0);
+    console_printf(uart, "Board's IP: %s\r\n", temp);
+}
+
 static void cmd_ntwrk_get_ssid(void * x)
 {
     struct uart_funcs * uart = cpe_get_info()->uart;
@@ -332,6 +425,38 @@ static void cmd_ntwrk_help(void * x)
         "ntwrk command actions\r\n\r\n");
     console_printf(uart,
         "status - Retrieve the current network status\r\n");
+}
+
+static void cmd_ntwrk_ping_decimal(void * x)
+{
+    struct cpe_info * info = cpe_get_info();
+    struct uart_funcs * uart = cpe_get_info()->uart;
+    (void)x;
+    IPAddress addr;
+    uint8_t temp[30] = { '\0' };
+    int res;
+
+    addr.fromString(info->token[2].start);
+    console_printf(uart, "Pinging: %s : ", info->token[2].start);
+    res = WiFi.ping(addr);
+    switch (res)
+    {
+        case WL_PING_DEST_UNREACHABLE:
+            console_printf(uart, "Destination unreachable");
+            break;
+        case WL_PING_TIMEOUT:
+            console_printf(uart, "Timed out");
+            break;
+        case WL_PING_UNKNOWN_HOST:
+            console_printf(uart, "Unable to resolve host");
+            break;
+        case WL_PING_ERROR:
+            console_printf(uart, "Error");
+            break;
+        default:
+            console_printf(uart, "Successful");
+            break;
+    }
 }
 
 static void cmd_ntwrk_scan(void * x)
